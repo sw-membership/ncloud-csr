@@ -1,30 +1,28 @@
 import os
-import json
-import requests
-from dotenv import load_dotenv
 
-load_dotenv()
+from splitMp3 import split
+from sound2text import sound2text
+from segmentation import segmentation
 
-CLIENT_ID = os.getenv('CLIENT_ID')
-CLIENT_SECRET = os.getenv('CLIENT_SECRET')
-LANGUAGE = 'Kor'
+result_path = 'results'
 
-url = f'https://naveropenapi.apigw.ntruss.com/recog/v1/stt?lang={LANGUAGE}'
-video_path = './audio.mp3'
-result_path = './result.txt'
-data = open(video_path, "rb")
-headers = {
-    "Content-Type": "application/octet-stream", # Fix
-    "X-NCP-APIGW-API-KEY-ID": CLIENT_ID,
-    "X-NCP-APIGW-API-KEY": CLIENT_SECRET,
-}
+if __name__ == '__main__':
+    print('오디오 파일 분할중...')
+    split()
+    print('오디오 파일 분할 완료')
 
-response = requests.post(url, data = data, headers = headers)
-rescode = response.status_code
+    print('STT 수행중...')
+    text = ''
+    for file in sorted(os.listdir(result_path)):
+        audio_file = os.path.join(result_path, file)
+        text += sound2text(audio_file)
+    print('STT 완료')
+    
+    print('결과 저장중...')
+    with open(os.path.join(result_path, 'result.txt'), 'w') as f:
+        f.write(text)
+    print('결과 저장 완료')
 
-if (rescode == 200):
-    print(response.text)
-    with open(result_path, 'w') as f:
-        f.write(response.text)
-else:
-    print("Error : " + response.text)
+    print('띄어쓰기 세그멘테이션 실행중...')
+    segmentation()
+    print('띄어쓰기 세그멘테이션 완료')
